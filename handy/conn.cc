@@ -26,6 +26,7 @@ void TcpConn::attach(EventBase* base, int fd, Ip4Addr local, Ip4Addr peer)
         peer_.toString().c_str(),
         fd);
     TcpConnPtr con = shared_from_this();
+    //Because TcpServer readcb can multi-allocation, so here will relate to different cb.
     con->channel_->onRead([=] { con->handleRead(con); });
     con->channel_->onWrite([=] { con->handleWrite(con); });
 }
@@ -246,7 +247,7 @@ void TcpConn::send(const char* buf, size_t len) {
 }
 
 void TcpConn::onMsg(CodecBase* codec, const MsgCallBack& cb) {
-    assert(!readcb_);
+    //assert(!readcb_);
     codec_.reset(codec);
     onRead([cb](const TcpConnPtr& con) {
         int r = 1;
@@ -297,7 +298,7 @@ int TcpServer::bind(const std::string &host, short port, bool reusePort) {
     fatalif(r, "listen failed %d %s", errno, strerror(errno));
     info("fd %d listening at %s", fd, addr_.toString().c_str());
     listen_channel_ = new Channel(base_, fd, kReadEvent);
-    listen_channel_->onRead([this]{ handleAccept(); });
+    listen_channel_->onRead([this]{ handleAccept(); });  //when disconnect will read, then listen_channel->fd() will be -1
     return 0;
 }
 
@@ -315,7 +316,8 @@ void TcpServer::handleAccept() {
     socklen_t rsz = sizeof(raddr);
     int lfd = listen_channel_->fd();
     int cfd;
-    while (lfd >= 0 && (cfd = accept(lfd,(struct sockaddr *)&raddr,&rsz))>=0) {
+    while (lfd >= 0 && (cfd = accept(lfd,(struct sockaddr *)&raddr,&rsz))>=0) { // if lfd>=0 new connect  else close tcp
+        printf("%s, lfd: %d,  cfd: %d\n", "handleAcept connect", lfd, cfd);
         sockaddr_in peer, local;
         socklen_t alen = sizeof(peer);
         int r = getpeername(cfd, (sockaddr*)&peer, &alen);
@@ -333,7 +335,8 @@ void TcpServer::handleAccept() {
         EventBase* b = bases_->allocBase();
         auto addcon = [=] {
             TcpConnPtr con = createcb_();
-            con->attach(b, cfd, local, peer);
+            _conn = con;
+            con->attach(b, cfd, local, peer); 
             if (statecb_) {
                 con->onState(statecb_);
             }
@@ -350,6 +353,7 @@ void TcpServer::handleAccept() {
             b->safeCall(move(addcon));
         }
     }
+    printf("%s, lfd: %d,  cfd: %d\n", "handleAcept", lfd, cfd);
     if (lfd >= 0 && errno != EAGAIN && errno != EINTR) {
         warn("accept return %d  %d %s", cfd, errno, strerror(errno));
     }

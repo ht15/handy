@@ -40,7 +40,10 @@ namespace handy {
         void send(const char* s) { send(s, strlen(s)); }
 
         //数据到达时回调
-        void onRead(const TcpCallBack& cb) { assert(!readcb_); readcb_ = cb; };
+        void onRead(const TcpCallBack& cb) { 
+            // assert(!readcb_)
+            readcb_ = cb; 
+        };
         //当tcp缓冲区可写时回调
         void onWritable(const TcpCallBack& cb) { writablecb_ = cb;}
         //tcp状态改变时回调
@@ -105,6 +108,7 @@ namespace handy {
         void onConnRead(const TcpCallBack& cb) { readcb_ = cb; assert(!msgcb_); }
         // 消息处理与Read回调冲突，只能调用一个
         void onConnMsg(CodecBase* codec, const MsgCallBack& cb) { codec_.reset(codec); msgcb_ = cb; assert(!readcb_); }
+        TcpConnPtr _conn;   // add for  change readcb_, maybe  not correct
     private:
         EventBase* base_;
         EventBases* bases_;

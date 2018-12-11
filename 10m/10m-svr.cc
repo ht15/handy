@@ -26,16 +26,16 @@ int main(int argc, const char* argv[]) {
             break;
         }
     }
-    EventBase base;
+    EventBase base;   // copy when write : the variables of  parent and child process is in different address when  writing
     if (pid == 0) { //child process
         usleep(100*1000); // wait master to listen management port
         vector<TcpServerPtr> svrs;
         long connected = 0, closed = 0, recved = 0;
         for (int i = 0; i < end_port-begin_port; i ++) {
             TcpServerPtr p = TcpServer::startServer(&base, "", begin_port + i, true);
-            p->onConnCreate([&]{
+            p->onConnCreate([&]{    // onConnCreate --> handleAccept().addcon (: create TcpConn to handle read and write)
                 TcpConnPtr con(new TcpConn);
-                con->onState([&](const TcpConnPtr& con) {
+                con->onState([&](const TcpConnPtr& con) {   // poller.loop_once --> TcpConn.handleHandshake(if state changed)
                     auto st = con->getState();
                     if (st == TcpConn::Connected) {
                         connected ++;
@@ -44,7 +44,7 @@ int main(int argc, const char* argv[]) {
                         connected --;
                     }
                 });
-                con->onMsg(new LengthCodec, [&](const TcpConnPtr& con, Slice msg) {
+                con->onMsg(new LengthCodec, [&](const TcpConnPtr& con, Slice msg) {   // --> OnRead(func = this lambda)
                     recved ++;
                     con->sendMsg(msg);
                 });
@@ -54,6 +54,7 @@ int main(int argc, const char* argv[]) {
         }
         TcpConnPtr report = TcpConn::createConnection(&base, "127.0.0.1", man_port, 3000);
         report->onMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {
+            printf("recv from master:%s\n", msg);
             if (msg == "exit") {
                 info("recv exit msg from master, so exit");
                 base.exit();
@@ -66,12 +67,13 @@ int main(int argc, const char* argv[]) {
         });
         base.runAfter(100, [&]() {
             report->sendMsg(util::format("%d connected: %ld closed: %ld recved: %ld", getpid(), connected, closed, recved));
-        }, 100);
+        }, 1000);
         base.loop();
     } else {
         map<int, Report> subs;
         TcpServerPtr master = TcpServer::startServer(&base, "127.0.0.1", man_port);
-        master->onConnMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {
+        master->onConnMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {  // TcpServer readcb can multi-allocation,
+            printf("recv report msg1:%s\n", msg);
             auto fs = msg.split(' ');
             if (fs.size() != 7) {
                 error("number of fields is %lu expected 7", fs.size());
@@ -85,10 +87,17 @@ int main(int argc, const char* argv[]) {
         base.runAfter(3000, [&](){
             for(auto& s: subs) {
                 Report r = s.second;
-                printf("pid: %6d connected %6ld closed: %6ld recved %6ld\n", s.first, r.connected, r.closed, r.recved);
+                //printf("pid: %6d connected %6ld closed: %6ld recved %6ld\n", s.first, r.connected, r.closed, r.recved);
             }
-            printf("\n");
+            //printf("\n");
         }, 3000);
+        base.runAfter(6000,[&](){
+            master->_conn->onMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {
+                printf("recv report msg2:%s\n", msg);
+                con->sendMsg("exit");
+            });
+        });
+       
         base.loop();
     }
     info("program exited");

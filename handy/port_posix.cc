@@ -23,7 +23,7 @@ namespace port{
         }
         return addr;
     }
-    uint64_t gettid() { return syscall(SYS_gettid); }
+    uint64_t gettid() { return syscall(SYS_gettid); } // get thread id uniquely
 #elif defined(OS_MACOSX)
     struct in_addr getHostByName(const std::string& host) {
         struct in_addr addr;

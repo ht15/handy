@@ -7,6 +7,7 @@ int main(int argc, const char* argv[]) {
     TcpServerPtr svr = TcpServer::startServer(&base, "", 2099);
     exitif(svr == NULL, "start tcp server failed");
     svr->onConnRead([](const TcpConnPtr& con) {
+    	printf("%s\n", "recv client msg");
         con->send(con->getInput());
     });
     base.loop();

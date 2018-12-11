@@ -117,6 +117,7 @@ void EventsImp::loop() {
     for (auto recon: reconnectConns_) { //重连的连接无法通过channel清理，因此单独清理
         recon->cleanup(recon);
     }
+    info("loop_once");
     loop_once(0);
 }
 
@@ -132,12 +133,15 @@ void EventsImp::init() {
     ch->onRead([=] {
         char buf[1024];
         int r = ch->fd() >= 0 ? ::read(ch->fd(), buf, sizeof buf) : 0;
+        printf("pipe read:%s, r: %d\n", buf, r);
         if (r > 0) {
+            info("call task");
             Task task;
-            while (tasks_.pop_wait(&task, 0)) {
+            while (tasks_.pop_wait(&task, 0)) {  // before exit, finish current tasks
                 task();
             }
         } else if (r == 0) {
+            info("delete ch");
             delete ch;
         } else if (errno == EINTR) {
         } else {
@@ -158,8 +162,9 @@ void EventsImp::handleTimeouts() {
 }
 
 EventsImp::~EventsImp() {
+    info("first destoryed when base.exit()");
     delete poller_;
-    ::close(wakeupFds_[1]);
+    ::close(wakeupFds_[1]); // will activate read event  --> wakeup() --> delete ch
 }
 
 void EventsImp::callIdles() {

@@ -36,13 +36,13 @@ PollerBase* createPoller() { return new PollerEpoll(); }
 PollerEpoll::PollerEpoll(){
     fd_ = epoll_create1(EPOLL_CLOEXEC);
     fatalif(fd_<0, "epoll_create error %d %s", errno, strerror(errno));
-    info("poller epoll %d created", fd_);
+    info("poller epoll id:%d created", fd_);
 }
 
 PollerEpoll::~PollerEpoll() {
     info("destroying poller %d", fd_);
     while (liveChannels_.size()) {
-        (*liveChannels_.begin())->close();
+        (*liveChannels_.begin())->close();  // close will delete this channel
     }
     ::close(fd_);
     info("poller %d destroyed", fd_);
@@ -83,7 +83,9 @@ void PollerEpoll::removeChannel(Channel* ch) {
 
 void PollerEpoll::loop_once(int waitMs) {
     int64_t ticks = util::timeMilli();
-    lastActive_ = epoll_wait(fd_, activeEvs_, kMaxEvents, waitMs);
+    lastActive_ = epoll_wait(fd_, activeEvs_, kMaxEvents, waitMs);\
+    if(waitMs == 0)
+        printf(" lastActive_:%d\n", lastActive_ );
     int64_t used = util::timeMilli()-ticks;
     trace("epoll wait %d return %d errno %d used %lld millsecond",
           waitMs, lastActive_, errno, (long long)used);
