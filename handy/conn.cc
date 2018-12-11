@@ -118,7 +118,7 @@ void TcpConn::handleRead(const TcpConnPtr& con) {
     if (state_ == State::Handshaking && handleHandshake(con)) {
         return;
     }
-    while(state_ == State::Connected) {
+    while(state_ == State::Connected) {  // con->close()
         input_.makeRoom();
         int rd = 0;
         if (channel_->fd() >= 0) {
@@ -135,7 +135,8 @@ void TcpConn::handleRead(const TcpConnPtr& con) {
                 readcb_(con);
             }
             break;
-        } else if (channel_->fd() == -1 || rd == 0 || rd == -1) {
+        } else if (channel_->fd() == -1 || rd == 0 || rd == -1) {  
+            // when con->close
             cleanup(con);
             break;
         } else { //rd > 0
