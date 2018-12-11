@@ -42,8 +42,9 @@ int main(int argc, const char* argv[]) {
     if (pid == 0) { //child process
         char *buf = new char[bsz];
         ExitCaller ec1([=] {delete[] buf; });
-        Slice msg(buf, bsz);
+        //Slice msg(buf, bsz);
         char heartbeat[] = "heartbeat";
+        Slice msg(heartbeat, sizeof(heartbeat));
         int send = 0;
         int connected = 0;
         int retry = 0;

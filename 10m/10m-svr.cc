@@ -46,6 +46,7 @@ int main(int argc, const char* argv[]) {
                 });
                 con->onMsg(new LengthCodec, [&](const TcpConnPtr& con, Slice msg) {   // --> OnRead(func = this lambda)
                     recved ++;
+                    info("recv from client msg: %s", msg);
                     con->sendMsg(msg);
                 });
                 return con;
@@ -87,16 +88,19 @@ int main(int argc, const char* argv[]) {
         base.runAfter(3000, [&](){
             for(auto& s: subs) {
                 Report r = s.second;
-                //printf("pid: %6d connected %6ld closed: %6ld recved %6ld\n", s.first, r.connected, r.closed, r.recved);
+                printf("pid: %6d connected %6ld closed: %6ld recved %6ld\n", s.first, r.connected, r.closed, r.recved);
             }
             //printf("\n");
-        }, 3000);
+        }, 10000);
+        /*
+        // test for exit
         base.runAfter(6000,[&](){
             master->_conn->onMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {
                 printf("recv report msg2:%s\n", msg);
                 con->sendMsg("exit");
             });
         });
+        */
        
         base.loop();
     }
