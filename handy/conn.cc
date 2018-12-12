@@ -127,7 +127,7 @@ void TcpConn::handleRead(const TcpConnPtr& con) {
         }
         if (rd == -1 && errno == EINTR) {
             continue;
-        } else if (rd == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) ) {
+        } else if (rd == -1 && (errno == EAGAIN || errno == EWOULDBLOCK) ) {  // read or write done when buff have no data.
             for(auto& idle: idleIds_) {
                 handyUpdateIdle(getBase(), idle);
             }
