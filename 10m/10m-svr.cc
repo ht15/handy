@@ -38,7 +38,7 @@ int main(int argc, const char* argv[]) {
                 con->onState([&](const TcpConnPtr& con) {   // poller.loop_once --> TcpConn.handleHandshake(if state changed)
                     auto st = con->getState();
                     if (st == TcpConn::Connected) {
-                        connected ++;
+                        connected ++; // when connect , except handleAccept  also handle a read operation
                     } else if (st == TcpConn::Closed || st == TcpConn::Failed) {
                         closed ++;
                         connected --;
@@ -74,7 +74,7 @@ int main(int argc, const char* argv[]) {
         map<int, Report> subs;
         TcpServerPtr master = TcpServer::startServer(&base, "127.0.0.1", man_port);
         master->onConnMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {  // TcpServer readcb can multi-allocation,
-            printf("recv report msg1:%s\n", msg);
+            //printf("recv report msg1:%s\n", msg);
             auto fs = msg.split(' ');
             if (fs.size() != 7) {
                 error("number of fields is %lu expected 7", fs.size());

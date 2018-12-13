@@ -84,8 +84,6 @@ void PollerEpoll::removeChannel(Channel* ch) {
 void PollerEpoll::loop_once(int waitMs) {
     int64_t ticks = util::timeMilli();
     lastActive_ = epoll_wait(fd_, activeEvs_, kMaxEvents, waitMs);\
-    if(waitMs == 0)
-        printf(" lastActive_:%d\n", lastActive_ );
     int64_t used = util::timeMilli()-ticks;
     trace("epoll wait %d return %d errno %d used %lld millsecond",
           waitMs, lastActive_, errno, (long long)used);

@@ -150,7 +150,8 @@ int TcpConn::handleHandshake(const TcpConnPtr& con) {
     struct pollfd pfd;
     pfd.fd = channel_->fd();
     pfd.events = POLLOUT | POLLERR;
-    int r = poll(&pfd, 1, 0);
+    int r = poll(&pfd, 1, 0);   // handle read
+    //printf("handleHandshake, r:%d\n", r);
     if (r == 1 && pfd.revents == POLLOUT) {
         channel_->enableReadWrite(true, false);
         state_ = State::Connected;
@@ -369,6 +370,8 @@ HSHAPtr HSHA::startServer(EventBase* base, const std::string& host, short port, 
 void HSHA::onMsg(CodecBase* codec, const RetMsgCallBack& cb) {
     server_->onConnMsg(codec, [this, cb](const TcpConnPtr& con, Slice msg) {
         std::string input = msg;
+        printf("HsHA.MSG:%s\n", msg);
+        fflush(stdout);
         threadPool_.addTask([=]{
             std::string output = cb(con, input);
             server_->getBase()->safeCall([=] {if (output.size()) con->sendMsg(output); });

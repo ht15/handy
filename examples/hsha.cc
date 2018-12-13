@@ -16,15 +16,16 @@ int main(int argc, const char* argv[]) {
         usleep(ms * 1000);
         return util::format("%s used %d ms", input.c_str(), ms);
     });
-    for (int i = 0; i < 5; i ++) {
+    for (int i = 0; i < 1; i ++) {
         TcpConnPtr con = TcpConn::createConnection(&base, "localhost", 2099);
         con->onMsg(new LineCodec, [](const TcpConnPtr& con, Slice msg) {
             info("%.*s recved", (int)msg.size(), msg.data());
             con->close();
         });
-        con->onState([](const TcpConnPtr& con) {
+        con->onState([](const TcpConnPtr& con) {  // when connect , except handleAccept  also handle a read operation
             if (con->getState() == TcpConn::Connected) {
                 con->sendMsg("hello");
+                printf("handread\n");
             }
         });
     }

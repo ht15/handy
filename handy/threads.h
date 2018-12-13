@@ -11,7 +11,7 @@
 
 namespace handy {
 
-template<typename T> struct SafeQueue: private std::mutex, private noncopyable {
+template<typename T> struct SafeQueue: private std::mutex, private noncopyable {  // inherit from mutex ,so can using unique_lock<mutex>
     static const int wait_infinite = std::numeric_limits<int>::max();
     //0 不限制队列中的任务数
     SafeQueue(size_t capacity=0): capacity_(capacity), exit_(false) {}

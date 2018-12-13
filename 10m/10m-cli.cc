@@ -71,8 +71,8 @@ int main(int argc, const char* argv[]) {
                         TcpConn::State st = con->getState();
                         if (st == TcpConn::Connected) {
                             connected++;
-//                            send ++;
-//                            con->sendMsg(msg);
+                            send ++;
+                            //con->sendMsg(msg);
                         } else if (st == TcpConn::Failed || st == TcpConn::Closed) { //连接出错
                             if (st == TcpConn::Closed) { connected--; }
                             retry++;
@@ -82,21 +82,21 @@ int main(int argc, const char* argv[]) {
 
             });
         }
-        if (heartbeat_interval) {
-            base.runAfter(heartbeat_interval * 10000, [&] {
-                for (int i = 0; i < heartbeat_interval*10; i ++) {
-                    base.runAfter(i*1000, [&,i]{
-                        size_t block = allConns.size() / heartbeat_interval / 10;
-                        for (size_t j=i*block; j<(i+1)*block && j<allConns.size(); j++) {
-                            if (allConns[j]->getState() == TcpConn::Connected) {
-                                allConns[j]->sendMsg(msg);
-                                send++;
-                            }
-                        }
-                    });
-                }
-            }, heartbeat_interval * 1000);
-        }
+        // if (heartbeat_interval) {
+        //     base.runAfter(heartbeat_interval * 10000, [&] {
+        //         for (int i = 0; i < heartbeat_interval*10; i ++) {
+        //             base.runAfter(i*1000, [&,i]{
+        //                 size_t block = allConns.size() / heartbeat_interval / 10;
+        //                 for (size_t j=i*block; j<(i+1)*block && j<allConns.size(); j++) {
+        //                     if (allConns[j]->getState() == TcpConn::Connected) {
+        //                         allConns[j]->sendMsg(msg);
+        //                         send++;
+        //                     }
+        //                 }
+        //             });
+        //         }
+        //     }, heartbeat_interval * 1000);
+        // }
         TcpConnPtr report = TcpConn::createConnection(&base, "127.0.0.1", man_port, 3000);
         report->onMsg(new LineCodec, [&](const TcpConnPtr& con, Slice msg) {
             if (msg == "exit") {

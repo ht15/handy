@@ -40,7 +40,7 @@ struct EventsImp {
     PollerBase* poller_;
     std::atomic<bool> exit_;
     int wakeupFds_[2];
-    int nextTimeout_;
+    int nextTimeout_;  // limit loop_once time prevent delay_callback not work
     SafeQueue<Task> tasks_;
     
     std::map<TimerId, TimerRepeatable> timerReps_;
@@ -74,7 +74,7 @@ struct EventsImp {
     }
 
     bool cancel(TimerId timerid);
-    TimerId runAt(int64_t milli, Task&& task, int64_t interval);
+    TimerId runAt(int64_t milli, Task&& task, int64_t interval);  // The return result TimerId using for cancel loop_task
 };
 
 EventBase::EventBase(int taskCapacity) {
@@ -210,7 +210,7 @@ void EventsImp::refreshNearest(const TimerId* tid){
     if (timers_.empty()) {
         nextTimeout_ = 1 << 30;
     } else {
-        const TimerId &t = timers_.begin()->first;
+        const TimerId &t = timers_.begin()->first;  // map implement using red black tree which order  keys
         nextTimeout_ = t.first - util::timeMilli();
         nextTimeout_ = nextTimeout_ < 0 ? 0 : nextTimeout_;
     }
