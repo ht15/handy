@@ -110,7 +110,7 @@ EventsImp::EventsImp(EventBase* base, int taskCap):
 
 void EventsImp::loop() {
     while (!exit_)
-        loop_once(10000);
+        loop_once(1000);
     timerReps_.clear();
     timers_.clear();
     idleConns_.clear();
@@ -135,7 +135,7 @@ void EventsImp::init() {
         int r = ch->fd() >= 0 ? ::read(ch->fd(), buf, sizeof buf) : 0;
         printf("pipe read:%s, r: %d\n", buf, r);
         if (r > 0) {
-            info("call task");
+            //info("call task");
             Task task;
             while (tasks_.pop_wait(&task, 0)) {  // before exit, finish current tasks
                 task();

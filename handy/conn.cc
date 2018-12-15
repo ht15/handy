@@ -150,8 +150,8 @@ int TcpConn::handleHandshake(const TcpConnPtr& con) {
     struct pollfd pfd;
     pfd.fd = channel_->fd();
     pfd.events = POLLOUT | POLLERR;
-    int r = poll(&pfd, 1, 0);   // handle read
-    //printf("handleHandshake, r:%d\n", r);
+    int r = poll(&pfd, 1, 0);   // after attach, will create a writable operation representing for 3-times-handshakeing
+    printf("=====================   handleHandshake, r:%d   ====================\n", r);
     if (r == 1 && pfd.revents == POLLOUT) {
         channel_->enableReadWrite(true, false);
         state_ = State::Connected;
@@ -164,7 +164,7 @@ int TcpConn::handleHandshake(const TcpConnPtr& con) {
             }
         }
     } else {
-        trace("poll fd %d return %d revents %d", channel_->fd(), r, pfd.revents);
+        trace("poll fd %d return %d revents %d --------------", channel_->fd(), r, pfd.revents);
         cleanup(con);
         return -1;
     }
@@ -355,7 +355,7 @@ void TcpServer::handleAccept() {
             b->safeCall(move(addcon));
         }
     }
-    printf("%s, lfd: %d,  cfd: %d\n", "handleAcept", lfd, cfd);
+    printf("%s, lfd: %d,  cfd: %d\n", "In handleAccept", lfd, cfd);
     if (lfd >= 0 && errno != EAGAIN && errno != EINTR) {
         warn("accept return %d  %d %s", cfd, errno, strerror(errno));
     }

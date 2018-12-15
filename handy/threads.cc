@@ -28,9 +28,13 @@ void ThreadPool::start() {
         thread t(
             [this] {
                 while (!tasks_.exited()) {
+                    printf("-------------------- thread task work ----------------------------\n");
+                    fflush(stdout);
                     Task task;
-                    if (tasks_.pop_wait(&task)) {
+                    if (tasks_.pop_wait(&task)) {  // if have no task to work, will be blocking in here.
                         task();
+                        printf("-------------------------- task work ---------------------------\n");
+                        fflush(stdout);
                     }
                 }
             }
@@ -46,6 +50,8 @@ void ThreadPool::join() {
 }
 
 bool ThreadPool::addTask(Task&& task) {
+    printf("----------------------------------- addTask  ---------------------------\n");
+    fflush(stdout);
     return tasks_.push(move(task));
 }
 
